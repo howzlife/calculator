@@ -9,48 +9,56 @@
 import UIKit
 
 class ViewController: UIViewController {
+    
+    @IBOutlet weak var display: UILabel!
 
     var userIsInTheMiddleOfTypingANumber = false
-
-    @IBOutlet weak var display: UILabel!
+    var hasDot = false
+    
+    var brain = CalculatorBrain()
     
     @IBAction func appendDigit(sender: UIButton) {
         let digit = sender.currentTitle!
         if userIsInTheMiddleOfTypingANumber {
-        display.text = display.text! + digit
+            if digit == "." {
+                if !hasDot {
+                    hasDot = true
+                    display.text = display.text! + "."
+                }
+            } else if digit == "PI" {
+                if userIsInTheMiddleOfTypingANumber {
+                    enter()
+                }
+                display.text = "3.14159265359"
+            } else if digit == "C" {
+                userIsInTheMiddleOfTypingANumber = false
+                displayValue = 0
+            } else {
+                display.text = display.text! + digit
+            }
         } else {
+            if digit == "PI" {
+                    enter()
+                display.text = "3.14159265359"
+            } else if digit == "C" {
+                displayValue = 0
+            } else {
             display.text = digit
+            }
             userIsInTheMiddleOfTypingANumber = true
         }
     }
     
     @IBAction func operate(sender: UIButton) {
-        let operation = sender.currentTitle!
         if userIsInTheMiddleOfTypingANumber {
             enter()
         }
-        
-        switch operation {
-        case "✖️": performOperation { $1 * $0 }
-        case "➗": performOperation { $1 / $0 }
-        case "➕": performOperation { $1 + $0 }
-        case "➖": performOperation { $1 - $0 }
-        case "✔️": performOperation {sqrt($0)}
-        default: break
-        }
-    }
-    
-    func performOperation(operation: (Double, Double) -> Double  ) {
-        if operandStack.count >= 2 {
-            displayValue = operation(operandStack.removeLast(), operandStack.removeLast())
-            enter()
-        }
-    }
-    
-    func performOperation(operation: (Double) -> Double  ) {
-        if operandStack.count >= 1 {
-            displayValue = operation(operandStack.removeLast())
-            enter()
+        if let operation = sender.currentTitle {
+            if let result = brain.performOperation(operation) {
+                displayValue = result
+            } else {
+                displayValue = 0
+            }
         }
     }
     
@@ -58,8 +66,12 @@ class ViewController: UIViewController {
     
     @IBAction func enter() {
         userIsInTheMiddleOfTypingANumber = false
-        operandStack.append(displayValue)
-        println("operandStack: /(operandStack)")
+        hasDot = false
+        if let result = brain.pushOperand(displayValue) {
+            displayValue = result
+        } else {
+            displayValue = 0
+        }
     }
 
     
